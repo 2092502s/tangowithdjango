@@ -58,6 +58,9 @@ MIDDLEWARE_CLASSES = (
 
 ROOT_URLCONF = 'rango2.urls'
 
+#Added in chapter 11
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
 WSGI_APPLICATION = 'rango2.wsgi.application'
 
 
