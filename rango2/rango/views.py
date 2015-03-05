@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from rango.models import Category #CH7
+from rango.models import Category 
 from django.http import HttpResponse
 from rango.models import Page
 from rango.forms import CategoryForm
@@ -11,6 +11,24 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 from django.contrib.auth.models import User
 from datetime import datetime
+from rango.bing_search import run_query
+from django.shortcuts import redirect
+
+def track_url(request):
+    page_id = None
+    url = '/rango/'
+    if request.method == 'GET':       
+        if 'page_id' in request.GET:  
+            page_id = request.GET['page_id']
+            try:
+                page = Page.objects.get(id=page_id)
+                page.views = page.views + 1
+                page.save()
+                url = page.url
+            except:
+                pass
+
+    return redirect(url)
 
 def index(request):
 
@@ -59,7 +77,17 @@ def index(request):
 
     return response
 	
+def search(request):
 
+    result_list = []
+    if request.method == 'POST':
+        query = request.POST['query'].strip()
+
+        if query:
+            # Run our Bing function to get the results list!
+            result_list = run_query(query)
+
+    return render(request, 'rango/search.html', {'result_list': result_list})
 
 
 def about(request):
@@ -112,7 +140,6 @@ def about(request):
 @login_required
 def category(request, category_name_slug):
     #Thin@login_requiredk of this as you passing a url-argment called category_name_slug
-
     context_dict={}
 
     try:
@@ -123,7 +150,7 @@ def category(request, category_name_slug):
         #dictionary
         context_dict['category_name_slug'] = category.slug
 
-        pages = Page.objects.filter( category=category )
+        pages = Page.objects.filter( category=category ).order_by('-views')
 
         context_dict['pages'] = pages
         context_dict['category']=category
