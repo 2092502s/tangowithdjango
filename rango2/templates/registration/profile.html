@@ -1,0 +1,30 @@
+{% extends "rango/base.html" %}
+
+{% load staticfiles %}
+
+{% block title %}Your profile{% endblock %}
+
+{% block body_block %}
+        <a href="{% url 'index' %}">Return to the homepage.</a><br />
+        Rango says: <strong>Change profile!</strong><br />
+
+		{% if user_profile.picture %}
+		   <img src="{{ user_profile.picture.url }}" />
+		{% endif %}
+		
+		<p> {{ user.username }} </p>
+		
+		
+		<p><strong> Email: </strong></p>
+		{{ user.email }}
+		
+        <form method="post" action="."
+                enctype="multipart/form-data">
+
+            {% csrf_token %}
+
+            {{ form.as_p }}
+
+            <input type="submit" name="submit" value="Save changes" />
+        </form>
+{% endblock %}

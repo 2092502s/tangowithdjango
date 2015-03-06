@@ -1,0 +1,12 @@
+{% extends 'rango/base.html' %}
+
+{% block title %} All Users {% endblock %}
+
+{% block body_block %}
+    <p>User Profiles at the moment</p>
+	
+    {% for user in all_users %}
+	    <a href="{% url 'other_profile' user.username %}">{{ user.username }}</a>
+	{% endfor %}
+	
+{% endblock %}

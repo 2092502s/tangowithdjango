@@ -1,0 +1,25 @@
+{% extends "rango/base.html" %}
+
+{% load staticfiles %}
+
+{% block title %}Profile{% endblock %}
+
+{% block body_block %}
+        <a href="{% url 'index' %}">Return to the homepage.</a><br />
+        <p><strong> Username: </strong></p>
+		{{ any_user.username }}
+		
+		<p><strong> Email: </strong></p>
+		{{ any_user.email }}
+		
+		<p><strong> Website: </strong></p>
+		{% if user_profile %}
+		    <a href ="{{user_profile.website}}">{{user_profile.website}}</a>
+		{% endif %}
+		
+		<p><strong> Picture: </strong></p>
+		{% if user_profile.picture %}
+             <img src="{{ user_profile.picture.url }}" />
+        {% endif %}
+
+{% endblock %}

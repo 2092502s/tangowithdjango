@@ -4,7 +4,7 @@ from django.http import HttpResponse
 from rango.models import Page
 from rango.forms import CategoryForm
 from rango.forms import PageForm
-from rango.forms import UserForm, UserProfileForm
+from rango.forms import UserForm, UserProfileForm, UserProfile
 from django.contrib.auth import authenticate, login
 from django.http import HttpResponseRedirect, HttpResponse
 from django.contrib.auth.decorators import login_required
@@ -29,6 +29,137 @@ def track_url(request):
                 pass
 
     return redirect(url)
+
+def profile(request):
+
+    if not request.user.is_authenticated():
+        return HttpResponse("Log in please")
+
+    context_dict = {}
+    user = request.user
+    
+    #Try to get existing information about user
+
+    try:
+        user_profile = UserProfile.objects.get( user = user )
+        context_dict['user_profile'] = user_profile
+    except:
+        pass
+    
+
+    
+    
+    #We need to obtain username, e-mail, website, picture, put into context_dict
+    if request.method == 'POST':
+        form = UserProfileForm(request.POST)
+
+        #Basically, we wish to initialise the field
+        form.fields('website').initial = user_profile.website
+        context_dict['form'] = form
+        
+        context_dict['picture'] = usprofile.picture
+
+        if form.is_valid():
+
+            newp = form.save(commit=False)
+            newp.user = request.user
+            
+            if 'picture' in request.FILES:
+                profile.picture = request.FILES['picture']
+
+            try:
+                newp.save()
+            except:
+                user_profile.delete()
+                newp.save()
+
+            profile.save() 
+            
+        else:
+            print profile_form.errors
+    else:
+        #display it 
+        form = UserProfileForm()
+        form.fields['website'].initial = user_profile.website
+        context_dict['form'] = form
+        context_dict['picture'] = user_profile.picture
+
+    return render(request, 'registration/profile.html', context_dict)
+
+def any_profile(request, user_name):
+
+    context_dict = {}
+    any_user = User.objects.get(username = user_name)
+    #Get hold of user information
+
+    #Try to get username and put it into dictionary
+    try:
+        user_profile = UserProfile.objects.get( user = any_name)
+        context_dict['user_profile'] = user_profile
+    except:
+        return HttpResponse("This user does not seem to exist.")
+
+    context_dict['user_name'] = user_name
+    context_dict['any_user'] = any_user
+
+    return render(request, 'registration/anyprofile.html', context_dict)
+
+def all_users(request):
+    all_users = User.objects.order_by('-username')
+    context_dict = {'all_users' : all_users}
+    return render(request, 'registration/all_users.html', context_dict)
+
+
+def register_profile(request):
+
+    # A boolean value for telling the template whether the registration was successful.
+    # Set to False initially. Code changes value to True when registration succeeds.
+    registered = False
+
+    # If it's a HTTP POST, we're interested in processing form data.
+    if request.method == 'POST':
+        # Attempt to grab information from the raw form information.
+        # Note that we make use only of UserProfileForm.
+        profile_form = UserProfileForm(data=request.POST)
+
+        # If the form is valid...
+        if profile_form.is_valid():
+
+            # Now sort out the UserProfile instance.
+            # Since we need to set the user attribute ourselves, we set commit=False.
+            # This delays saving the model until we're ready to avoid integrity problems.
+            profile = profile_form.save(commit=False)
+            profile.user = request.user
+
+            # Did the user provide a profile picture?
+            # If so, we need to get it from the input form and put it in the UserProfile model.
+            if 'picture' in request.FILES:
+                profile.picture = request.FILES['picture']
+
+            # Now we save the UserProfile model instance.
+            profile.save()
+
+            # Update our variable to tell the template registration was successful.
+            registered = True
+
+        # Invalid form or forms - mistakes or something else?
+        # Print problems to the terminal.
+        # They'll also be shown to the user.
+        else:
+            print profile_form.errors
+
+    # Not a HTTP POST, so we render our form using two ModelForm instances.
+    # These forms will be blank, ready for user input.
+    else:
+        profile_form = UserProfileForm()
+
+    # Render the template depending on the context.
+    return render(request,
+            'registration/profile_registration.html',
+            {'profile_form': profile_form, 'registered': registered} )
+
+
+
 
 def index(request):
 
@@ -141,6 +272,17 @@ def about(request):
 def category(request, category_name_slug):
     #Thin@login_requiredk of this as you passing a url-argment called category_name_slug
     context_dict={}
+    context_dict['result_list'] = None
+    context_dict['query'] = None
+    if request.method == 'POST':
+        query = request.POST['query'].strip()
+
+        if query:
+            # Run our Bing function to get the results list!
+            result_list = run_query(query)
+
+            context_dict['result_list'] = result_list
+            context_dict['query'] = query
 
     try:
         category = Category.objects.get(slug=category_name_slug)
@@ -156,6 +298,9 @@ def category(request, category_name_slug):
         context_dict['category']=category
     except Category.DoesNotExist:
         pass
+
+    if not context_dict['query']:
+        context_dict['query'] = category.name
 
     return render(request, 'rango/category.html', context_dict) #Refer to template
 
